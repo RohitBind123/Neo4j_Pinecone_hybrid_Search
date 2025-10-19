@@ -39,7 +39,7 @@ if INDEX_NAME not in existing_indexes:
     pc.create_index(
         name=INDEX_NAME,
         dimension=VECTOR_DIM,           # dimensionality of dense model embeddings
-        metric="dotproduct",     # sparse values supported only for dotproduct
+        metric="cosine",     # cosine similarity is recommended for sentence transformers
         spec=ServerlessSpec(cloud="aws", region="us-east-1"),
     )
 

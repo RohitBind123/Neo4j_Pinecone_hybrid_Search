@@ -1,8 +1,6 @@
 # hybrid_chat_async.py
 import asyncio
-import aiohttp
 import os
-import json
 from typing import List
 from pinecone import Pinecone, ServerlessSpec
 from neo4j import GraphDatabase
@@ -34,7 +32,7 @@ INDEX_NAME = config.PINECONE_INDEX_NAME
 # Initialize clients
 # -----------------------------
 # Initialize the Hugging Face embedding model.
-client = client =HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
+client = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
 
 # Initialize the Pinecone client.
 pc = Pinecone(api_key=config.PINECONE_API_KEY)
@@ -46,7 +44,7 @@ if INDEX_NAME not in pc.list_indexes().names():
         name=INDEX_NAME,
         dimension=config.PINECONE_VECTOR_DIM,
         metric="cosine",
-        spec=ServerlessSpec(cloud="aws", region="us-east1-gcp")
+        spec=ServerlessSpec(cloud="aws", region=config.PINECONE_REGION)
     )
 
 index = pc.Index(INDEX_NAME)
@@ -175,15 +173,27 @@ async def interactive_chat():
             break
 
         # Get the semantic search results from Pinecone.
-        matches = await pinecone_query(query, top_k=TOP_K)
+        try:
+            matches = await pinecone_query(query, top_k=TOP_K)
+        except Exception as e:
+            print(f"Error querying Pinecone: {e}")
+            continue
         match_ids = [m["id"] for m in matches]
         # Get the graph context from Neo4j.
-        graph_facts = await fetch_graph_context(match_ids)
+        try:
+            graph_facts = await fetch_graph_context(match_ids)
+        except Exception as e:
+            print(f"Error fetching graph context: {e}")
+            continue
 
         # Build the prompt for the language model.
         prompt = build_prompt(query, matches, graph_facts)
         # Get the answer from the language model.
-        answer = await call_chat(prompt)
+        try:
+            answer = await call_chat(prompt)
+        except Exception as e:
+            print(f"Error calling chat model: {e}")
+            continue
         # Print the answer.
         print("\n=== Assistant Answer ===\n")
         print(answer)
