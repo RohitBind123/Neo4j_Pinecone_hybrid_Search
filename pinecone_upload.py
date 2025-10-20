@@ -9,8 +9,11 @@ from pinecone import Pinecone, ServerlessSpec
 import config
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 
+os.environ["LANGSMITH_TRACING"] = "true"
+os.environ["LANGSMITH_API_KEY"] = config.LANGSMITH_API_KEY
+os.environ["GROQ_API_KEY"] = config.GROQ_API_KEY
 # This script loads data from a JSON file, generates embeddings for the data, and uploads them to a Pinecone index.
-
+from langsmith import traceable
 # -----------------------------
 # Config
 # -----------------------------
@@ -53,6 +56,7 @@ index = pc.Index(INDEX_NAME)
 # -----------------------------
 # Helper functions
 # -----------------------------
+@traceable
 def get_embeddings(texts):
     """Generate embeddings using hugging face embedding model ."""
     resp = client.embed_documents(texts)

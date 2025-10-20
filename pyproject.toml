@@ -12,6 +12,7 @@ dependencies = [
     "langchain>=1.0.0",
     "langchain-google-genai>=3.0.0",
     "langchain-huggingface>=1.0.0",
+    "langsmith>=0.4.37",
     "neo4j>=5.15.0",
     "networkx==3.1",
     "pinecone>=7.3.0",

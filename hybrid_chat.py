@@ -9,6 +9,7 @@ from groq import Groq
 from dotenv import load_dotenv
 load_dotenv()
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
+from langsmith import traceable
 
 # This script implements an asynchronous version of the hybrid chat system.
 # It uses asyncio to run the I/O-bound operations concurrently, which improves the responsiveness of the application.
@@ -20,6 +21,11 @@ if "GROQ_API_KEY" not in os.environ:
     os.environ["GROQ_API_KEY"] = config.GROQ_API_KEY
 
 groq_client = Groq(api_key=os.environ["GROQ_API_KEY"])
+
+# LANGSMITH settings
+os.environ["LANGSMITH_TRACING"] = "true"
+os.environ["LANGSMITH_API_KEY"] = config.LANGSMITH_API_KEY
+os.environ["GROQ_API_KEY"] = config.GROQ_API_KEY
 
 
 # -----------------------------
@@ -69,7 +75,7 @@ async def embed_text(text: str) -> List[float]:
     resp = await loop.run_in_executor(None, client.embed_documents, [text])
     embedding_cache[text] = resp
     return resp
-
+@traceable
 async def pinecone_query(query_text: str, top_k=TOP_K):
     """Query Pinecone index using embedding."""
     # Get the embedding for the query text.
@@ -85,7 +91,7 @@ async def pinecone_query(query_text: str, top_k=TOP_K):
     print("DEBUG: Pinecone top 5 results:")
     print(len(res["matches"]))
     return res["matches"]
-
+@traceable
 async def fetch_graph_context(node_ids: List[str], neighborhood_depth=1):
     """Fetch neighboring nodes from Neo4j."""
     facts = []
@@ -149,7 +155,7 @@ def build_prompt(user_query, pinecone_matches, graph_facts):
          "Based on the above, answer the user's question. If helpful, suggest 2–3 concrete itinerary steps or tips and mention node ids for references."}
     ]
     return prompt
-
+@traceable
 async def call_chat(prompt_messages):
 
 

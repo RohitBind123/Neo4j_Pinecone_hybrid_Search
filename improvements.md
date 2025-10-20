@@ -271,6 +271,27 @@ system = (
 
 ---
 
+### 7. Langsmith Tracing (Debugging & Cost Analysis)
+
+**Implementation:**
+```python
+# In hybrid_chat.py and pinecone_upload.py
+import os
+from langsmith import traceable
+import config
+
+# LANGSMITH settings
+os.environ["LANGSMITH_TRACING"] = "true"
+os.environ["LANGSMITH_API_KEY"] = config.LANGSMITH_API_KEY
+```
+
+**Benefits:**
+- **Debugging:** Langsmith provides a detailed trace of the execution flow, making it easier to identify and fix bugs in the system. It allows developers to see the inputs and outputs of each component, as well as the time it takes to execute.
+- **Cost Analysis:** By tracing the execution of the LLM and other components, Langsmith helps in understanding the cost of each query. This is crucial for optimizing the system and reducing operational costs.
+- **Performance Monitoring:** Langsmith allows for monitoring the performance of the system in real-time, helping to identify bottlenecks and areas for improvement.
+
+---
+
 ## 📊 Performance Metrics Summary
 
 | Metric | Before | After | Improvement |
@@ -376,16 +397,6 @@ system = (
 
 ---
 
-## 📞 Contact & Submission
-
-**GitHub Repository:** [Include if available]  
-**Live Demo:** [Include if deployed]  
-**Video Walkthrough:** [Include Loom link if created]  
-
-**Submitted via:** [Google Forms Link]  
-**Survey Completed:** ✅
-
----
 
 ## 🙏 Acknowledgments
 

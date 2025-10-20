@@ -28,16 +28,44 @@ This is a Hybrid AI Travel Assistant that uses a combination of Pinecone vector 
    ```
 2. **Install dependencies:**
    ```bash
+
    uv pip install -r requirements.txt
+   or install dependencies from project.toml
+   by uv syncaiohttp>=3.13.1
+   asyncio>=4.0.0
+   dotenv>=0.9.9
+   groq>=0.32.0
+   langchain>=1.0.0
+   langchain-google-genai>=3.0.0
+   langchain-huggingface>=1.0.0
+   neo4j>=5.15.0
+   networkx==3.1
+   pinecone>=7.3.0
+   python-dotenv>=1.1.1
+   pyvis==0.3.1
+   sentence-transformers>=5.1.1
+   tqdm>=4.67.1
+   langsmith
+
    ```
 3. **Set up environment variables:**
-   Create a `.env` file in the root directory and add the following environment variables:
+   Create a `config.py file with these varibale to run hybrid_chat.py` file in the root directory and add the following environment variables:
    ```
-   PINECONE_API_KEY="your-pinecone-api-key"
-   NEO4J_URI="your-neo4j-uri"
-   NEO4J_USERNAME="your-neo4j-username"
-   NEO4J_PASSWORD="your-neo4j-password"
-   GROQ_API_KEY="your-groq-api-key"
+   NEO4J_URI = "neo4j+ssc://dummy-host.databases.neo4j.io"
+   NEO4J_USERNAME = "dummy_user"
+   NEO4J_PASSWORD = "dummy_password"
+
+   GROQ_API_KEY = "gsk_dummykey"
+
+   PINECONE_API_KEY = "pcsk_dummyapikey"
+   PINECONE_ENV = "us-east1"
+   PINECONE_INDEX_NAME = "dummy-index"
+   PINECONE_VECTOR_DIM = 768
+
+   GROQ_MODEL = "openai/dummy-model"
+   TOP_K = 5
+   LANGSMITH_API_KEY=<"your langsmith Api key">
+
    ```
 
 ## Usage
