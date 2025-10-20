@@ -8,6 +8,7 @@ dependencies = [
     "aiohttp>=3.13.1",
     "asyncio>=4.0.0",
     "dotenv>=0.9.9",
+    "fastapi>=0.119.1",
     "groq>=0.32.0",
     "langchain>=1.0.0",
     "langchain-google-genai>=3.0.0",
@@ -19,5 +20,6 @@ dependencies = [
     "python-dotenv>=1.1.1",
     "pyvis==0.3.1",
     "sentence-transformers>=5.1.1",
+    "streamlit>=1.50.0",
     "tqdm>=4.67.1",
 ]
