@@ -1,5 +1,7 @@
-
-import streamlit as st
+from fastapi import FastAPI
+from langserve import add_routes
+from pydantic import BaseModel
+from langchain_core.runnables import RunnableLambda
 import asyncio
 import os
 from typing import List
@@ -10,16 +12,18 @@ from groq import Groq
 from dotenv import load_dotenv
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langsmith import traceable
+import uvicorn
+
 # Load environment variables
 load_dotenv()
 
 # ----------------------------
-# Page Config
+# App
 # ----------------------------
-st.set_page_config(
-    page_title="Hybrid Travel Assistant",
-    page_icon="✈️",
-    layout="wide"
+app = FastAPI(
+    title="Hybrid Travel Assistant",
+    description="A travel assistant that uses a hybrid search approach to answer user queries.",
+    version="1.0.0",
 )
 
 # ----------------------------
@@ -45,7 +49,6 @@ INDEX_NAME = config.PINECONE_INDEX_NAME
 # ----------------------------
 # Initialize clients
 # ----------------------------
-@st.cache_resource
 def get_clients():
     """Get clients for HuggingFace, Pinecone, and Neo4j."""
     # Initialize the Hugging Face embedding model.
@@ -56,7 +59,7 @@ def get_clients():
 
     # Connect to Pinecone index
     if INDEX_NAME not in pc.list_indexes().names():
-        st.info(f"Creating managed index: {INDEX_NAME}")
+        print(f"Creating managed index: {INDEX_NAME}")
         pc.create_index(
             name=INDEX_NAME,
             dimension=config.PINECONE_VECTOR_DIM,
@@ -157,7 +160,8 @@ def build_prompt(user_query, pinecone_matches, graph_facts):
          f"User query: {user_query}\n\n"
          f"Top semantic matches (from vector DB):\n{summary}\n\n"
          "Graph facts (neighboring relations):\n" + "\n".join(graph_context[:20]) + "\n\n"
-         "Based on the above, answer the user's question. If helpful, suggest 2–3 concrete itinerary steps or tips and mention node ids for references."}
+         "Based on the above, answer the user's question. If helpful, suggest 2–3 concrete itinerary steps or tips and mention node ids for references."
+        }
     ]
     return prompt
 
@@ -169,41 +173,29 @@ async def call_chat(prompt_messages):
     return resp.choices[0].message.content
 
 # ----------------------------
-# Streamlit UI
+# Langserve endpoint
 # ----------------------------
-st.title("Hybrid Travel Assistant ✈️")
+class ChatInput(BaseModel):
+    query: str
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+async def get_answer(input: dict):
+    """Get answer from the hybrid search."""
+    prompt = input['query']
+    matches = await pinecone_query(prompt, top_k=TOP_K)
+    match_ids = [m["id"] for m in matches]
+    graph_facts = await fetch_graph_context(match_ids)
+    chat_prompt = build_prompt(prompt, matches, graph_facts)
+    answer = await call_chat(chat_prompt)
+    return {"answer": answer}
 
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+runnable = RunnableLambda(get_answer)
 
-if prompt := st.chat_input("What is your travel question?"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+add_routes(
+    app,
+    runnable,
+    path="/chat",
+    input_type=ChatInput,
+)
 
-    with st.chat_message("assistant"):
-        message_placeholder = st.empty()
-        with st.spinner("Thinking..."):
-            try:
-                # Create a new event loop
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-
-                # Run the async function to get the answer
-                matches = loop.run_until_complete(pinecone_query(prompt, top_k=TOP_K))
-                match_ids = [m["id"] for m in matches]
-                graph_facts = loop.run_until_complete(fetch_graph_context(match_ids))
-                chat_prompt = build_prompt(prompt, matches, graph_facts)
-                answer = loop.run_until_complete(call_chat(chat_prompt))
-                
-                message_placeholder.markdown(answer)
-                st.session_state.messages.append({"role": "assistant", "content": answer})
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
-            finally:
-                # Close the event loop
-                loop.close()
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8001)
